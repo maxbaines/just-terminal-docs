@@ -4,9 +4,72 @@
 
 Setup and reference material for running JustTerminal on your own machine or server.
 
+## Download and run
+
+Get the [latest public release](https://github.com/maxbaines/just-terminal-docs/releases/latest).
+Downloads do not require access to the private source repository.
+
+| Host | Archive |
+|---|---|
+| Linux Intel / AMD x64 | [Linux x64](https://github.com/maxbaines/just-terminal-docs/releases/latest/download/just-terminal_linux_amd64.tar.gz) |
+| Linux ARM64 | [Linux ARM64](https://github.com/maxbaines/just-terminal-docs/releases/latest/download/just-terminal_linux_arm64.tar.gz) |
+| macOS Intel | [macOS x64](https://github.com/maxbaines/just-terminal-docs/releases/latest/download/just-terminal_darwin_amd64.tar.gz) |
+| macOS Apple silicon | [macOS ARM64](https://github.com/maxbaines/just-terminal-docs/releases/latest/download/just-terminal_darwin_arm64.tar.gz) |
+| Windows with WSL2 | Use the Linux archive matching `uname -m` inside WSL2: `x86_64` → x64, `aarch64` → ARM64 |
+
+Download the matching archive and [checksums.txt](https://github.com/maxbaines/just-terminal-docs/releases/latest/download/checksums.txt)
+from the **same release**. In that download directory, verify and extract it
+(replace the filename for your platform):
+
+```bash
+# Linux / WSL2
+sha256sum --ignore-missing -c checksums.txt
+# macOS: shasum -a 256 --ignore-missing -c checksums.txt
+# Require an OK result for your archive before continuing.
+tar -xzf just-terminal_linux_amd64.tar.gz
+./just-terminal
+```
+
+Open http://127.0.0.1:8311. The web UI is embedded; Go, Node.js and npm are
+not required to run a download. Install and sign in to Codex separately to use
+agent chats. Use a normal user account for your local terminal sessions.
+
+An optional installer verifies the archive checksum and installs to `~/.local/bin`:
+
+```bash
+curl -fL https://github.com/maxbaines/just-terminal-docs/releases/latest/download/install.sh -o install.sh
+# Review install.sh, then:
+bash install.sh
+```
+
+### macOS
+
+The archives contain command-line executables, not `.app` bundles or DMGs.
+They are not Developer ID signed or notarized. After verifying the checksum,
+if macOS blocks the downloaded binary, follow Apple's
+[Open Anyway instructions](https://support.apple.com/en-us/102445) in
+System Settings → Privacy & Security. Do not disable Gatekeeper globally.
+The Homebrew tap is not published; use the archive or installer.
+
+### Windows (WSL2)
+
+Native Windows executables are not supported: the Session Owner requires Unix
+PTYs and the host filesystem integration uses Unix APIs. Use Windows 11 or a
+[Windows 10 version supported by WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
+In an administrator PowerShell, run `wsl --install`, restart if requested, and
+complete Ubuntu's first-run user setup. Confirm the distribution uses version 2
+with `wsl --list --verbose`.
+
+Download, verify and extract the **Linux** archive inside your WSL2 distribution
+(or run the installer there). Run `./just-terminal serve --addr 127.0.0.1:8311`
+in WSL2 and open http://127.0.0.1:8311 in your Windows browser. Browser auto-open
+from WSL may be unavailable. Keep the WSL distribution running while using
+JustTerminal; `wsl --shutdown` ends its shell processes. Windows/WSL2 runtime
+verification is separate from the native Linux and macOS release checks.
+
 ## Build and run
 
-The source repository is private. Building locally or deploying its Dockerfile requires collaborator access. This public documentation repository does not contain the application source or downloadable builds.
+The source repository is private. Building locally or deploying its Dockerfile requires collaborator access. The public documentation repository hosts release downloads but does not contain the application source.
 
 ### Requirements
 
@@ -114,12 +177,48 @@ Traefik, and Coolify recipes.
 
 `just-terminal mcp` exposes a [Model Context Protocol](https://modelcontextprotocol.io) server over JSON-RPC 2.0 on stdio. It connects to a running local JustTerminal instance and provides tools for:
 
-- terminal input, command completion, and screen observation;
-- Workspace and Pane lifecycle and layout;
-- port-forward tunnel lifecycle; and
-- live configuration reads and updates.
+| Area | Tools |
+| --- | --- |
+| Terminals | `run_command`, `send_input`, `get_screen`, `get_scrollback`, `get_pane_context` |
+| Workspaces | `list_workspaces`, `create_workspace`, `switch_workspace`, `rename_workspace`, `close_workspace` |
+| Panes | `create_pane`, `rename_pane`, `close_pane`, `list_panes`, `get_layout`, `move_pane_to_workspace` |
+| Codex | `get_codex_status`, `launch_codex`, `list_codex_skills`, `set_codex_skill_enabled`, `auto_name_pane` |
+| Host files | `read_file`, `list_files`, `create_directory` |
+| S3 | `list_s3_connections`, `list_s3_objects`, `get_s3_object_info`, `list_transfer_jobs`, `start_transfer`, `transfer_job_action` |
+| Tunnels and settings | `list_tunnels`, `create_tunnel`, `close_tunnel`, `get_config`, `update_config` |
 
-It also exposes current terminal screens as `pane://` resources.
+Terminal and pane tools target the MCP session's selected workspace. The first
+sessiond-backed call attaches to the first available workspace; use
+`switch_workspace` to select another. `list_panes` and `get_layout` accept an
+optional `workspace` for observation without changing that selection.
+`create_pane` accepts `cwd` for a terminal's starting directory. Browser panes
+are client-rendered: navigate through the browser UI; the previously advertised
+but ignored `url` and `browser_port` arguments now return an explicit error.
+
+`move_pane_to_workspace` takes the **source** `workspace_id` and `pane_id`, and
+moves the live pane into a **new** workspace while preserving Codex association.
+Its result includes the new `workspaceId`; switch explicitly to target it.
+Codex and other Gateway tools use explicit workspace IDs where applicable.
+
+`get_pane_context` returns the live cwd, foreground command and Git summary.
+`get_scrollback` pages backward through retained history using `next_cursor`.
+The `pane://<pane_id>` resources expose current terminal screens in the selected
+workspace; list them again after creating, closing, moving or switching panes.
+Resource subscriptions report live terminal output.
+
+Codex tools require the host's Codex installation and provider configuration.
+Skill toggles use the absolute skill path returned by `list_codex_skills`.
+S3 tools use connections configured in Settings and never return credentials.
+`start_transfer` supports `s3-to-host`, `host-to-s3` and `s3-to-s3`, including
+batch selections and verified S3 moves. Supply the current connection revision
+from `list_s3_connections`, then poll `list_transfer_jobs`. Overwrite decisions
+require the job's current `decision` token in `transfer_job_action`.
+
+The Gateway must be running for Codex, file, S3, config and tunnel tools. These
+use its existing authentication boundary; reverse-proxy deployments that require
+authentication also require it for these HTTP calls. `initialize` and `tools/list`
+work even when the app is stopped. For an isolated instance, launch the MCP
+process with the same `XDG_RUNTIME_DIR` as its Gateway and Session Owner.
 
 ### Amplifier
 
@@ -190,17 +289,26 @@ The browser renders terminals with xterm.js and arranges Pane Groups with dockvi
 
 ## Releases and updates
 
-The repository includes a release workflow for checksummed Linux amd64 and macOS
-amd64/arm64 archives. No releases are currently published on
-[GitHub Releases](https://github.com/maxbaines/just-terminal/releases), so build
-from source for now. The download installer depends on a published release;
-the Homebrew tap is not yet published.
+[Public GitHub Releases](https://github.com/maxbaines/just-terminal-docs/releases)
+provide checksummed Linux and macOS archives for x64 and ARM64, plus the installer.
+Windows uses those Linux archives through WSL2. See each release's verification
+notes for the platforms actually exercised. Downloads are unsigned; macOS builds
+are not notarized. No native Windows executable or Homebrew tap is published.
+
+Release tags use `vMAJOR.MINOR.PATCH`. Archives keep stable names across versions,
+so `/releases/latest/download/just-terminal_linux_amd64.tar.gz` follows the latest
+stable release. Use `/releases/download/vX.Y.Z/...` to pin a version. Preserve the
+previous binary to roll back, and stop the Gateway and Session Owner before a
+manual replacement if the release notes require it; stopping the Session Owner
+ends running shells.
 
 **About** contains update status and the native self-update controls. Container
 deployments update by rebuilding or pulling and redeploying the image; the
 in-app updater does not rewrite binaries in containers.
 
 ## Contributing
+
+Start with the [contribution guidelines](../CONTRIBUTING.md) for source access, issue reports, change scope, and PR evidence. The commands below are for collaborators working in the source checkout.
 
 Build and run the isolated local development stack:
 
@@ -226,4 +334,3 @@ playwright-cli close
 ```
 
 Read [AGENTS.md](../AGENTS.md) before contributing; it contains the full verification policy and fixture-hygiene requirements.
-
