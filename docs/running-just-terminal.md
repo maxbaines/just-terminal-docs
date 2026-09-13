@@ -3,6 +3,8 @@
 [← JustTerminal](../README.md)
 
 Setup and reference material for running JustTerminal on your own machine or server.
+For everyday use, see [Working in JustTerminal](workspaces-and-agents.md):
+workspaces, JT and agents, file previews, skills, S3, and mobile controls.
 
 ## Download and run
 

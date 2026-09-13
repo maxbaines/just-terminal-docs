@@ -1,86 +1,48 @@
 # [JustTerminal](https://justterminal.com)
 
-**Your terminal, with room for the whole project.**
+**Your terminal. Your whole project.**
 
-Give an agent a task, keep your dev server running, and open the files you're reviewing beside the conversation. Agents can work without terminal panes. When you need to leave, close the tab. Your shells keep running, ready for you to reconnect from your laptop or phone.
+Give agents a task and a place to work. JustTerminal brings independent agents, real shells, and project files into one browser workspace on a machine you control. Keep the conversation beside the work, then pick it up again from your laptop, iPad, or phone.
 
-JustTerminal runs on your own machine or server and opens in a browser. Use the shell, editor, and command-line tools you already know.
+[Download](#try-it) · [Website](https://justterminal.com) · [Workspace guide](docs/workspaces-and-agents.md) · [Self-hosting](docs/running-just-terminal.md)
 
-[Try it](#try-it) · [Self-hosting guide](docs/running-just-terminal.md) · [Report an issue](https://github.com/maxbaines/just-terminal-docs/issues)
+![JustTerminal agent workspace with chat, a shared image, rendered Markdown, and the same conversation in a terminal](web/site/assets/agent-workspace.png)
 
-![JustTerminal with Codex, rendered Markdown, highlighted TypeScript, and an expanded project file tree arranged side by side](docs/visual-reference/just-terminal-desktop-v1.png)
+## Give agents a task. Keep working.
 
-## A workspace for each project
+Ask **JT**, the built-in agent, to arrange your workspace or recruit agents for a project. Or choose **New agent**, give it a folder and a task, and let it get to work. Each agent runs an independent Codex conversation with normal tools and project permissions, without needing a terminal pane.
 
-Give a project a workspace, then arrange it around what you're doing. Split terminals to watch commands side by side, keep extra shells in tabs, or drag a pane into the sidebar to start a separate workspace.
+Talk directly to any agent while it works. See which one needs your attention, answer supported questions and approvals in chat, and share the current pane context or selected terminal output. Other agents keep working.
 
-The sidebar shows each workspace's current directory, Git branch, and change count. When you come back to a project, there's enough context to find your place.
+On desktop, dock an agent's chat beside files and terminals, or keep it in a tab. Open a file or full-size image it shares. **Show terminal** opens the same conversation; closing a view leaves the agent running. Saved history lets you return to the conversation later.
 
-## See which agent needs you
+Agent chats require **Codex installed and signed in on the host**. You can also run Claude Code, Codex, or your usual CLI agent in any terminal. The [built-in MCP server](docs/running-just-terminal.md#agent-integration-with-mcp) gives agents tools to manage workspaces, inspect terminals and files, move data through S3, and expose local apps.
 
-Run Codex, Claude Code, or another terminal agent in a pane. For Codex, there's also a **New Codex session** button: choose a project folder and start from there.
+## A real workspace around the conversation
 
-Codex's sidebar cards show its current task, remaining context, and requests for answers or approval. Leave several sessions working and see which one needs your attention without checking them all. The sidebar footer shows Codex account and usage limits when the provider reports them.
+- **Your shells and tools.** Split panes, stack tabs, and arrange a workspace for each project. Keep your editor, dev server, and CLI tools running together, with the current directory, Git branch, and change count visible.
+- **Files beside the terminal.** A file tree that follows you as you `cd`, Git change badges, highlighted source, rendered Markdown, images, and HTML previews. Open paths from terminal output or agent replies. Viewers are read-only; edit with your usual tools.
+- **Context within reach.** Type `/` in chat to autocomplete host files and folders. Paste a screenshot into a terminal to save it on the host and insert its path. Browse Codex skills, read their instructions, and choose which are enabled for your work.
+- **Local files and S3.** Browse AWS S3 or compatible storage, upload and download, and copy files or whole folders between your host and S3 connections. Server-side transfers continue after you close the tab, with progress, overwrite decisions, and retries.
+- **A URL for your dev server.** Give a local app its own hostname, with assets, redirects, cookies, and WebSockets carried through the tunnel. Remote deployments need wildcard DNS, TLS, and proxy routing; see the [local app guide](docs/local-app-tunnels.md).
 
-## Give agents a task, then keep working
+See the [workspace and agent guide](docs/workspaces-and-agents.md) for controls, skills, file browsing, S3 transfers, and everyday workflows.
 
-Choose **JT** in the agents list to control the app in plain language: “create a workspace called API” or “start an agent to review this project.” Ask JT to recruit agents, or choose **New agent** and give it a task and project folder. Each agent runs an independent Codex conversation with normal tools and project permissions. Codex must be installed and signed in on the host.
+## Step away. Keep your place.
 
-Click an agent's name to talk directly, including while it works. Its card shows activity and when it needs your attention. Answer supported questions and approvals in chat; other requests can be answered in the terminal. Tool activity stays collapsed until you expand it.
+Your shells stay on the host when the browser disconnects. Reconnect to the current screen and scrollback, including after a web-server restart that leaves the Session Owner running.
 
-On desktop, each agent opens in its own workspace, with chat and terminal views grouped under its card. Dock the chat beside files or a terminal, or keep it in a tab. **Show terminal** opens the same conversation. Closing a chat or terminal view leaves the agent running.
+On a phone, move between **Chat**, **Files**, **Console**, and **Agents**, with extra terminal keys within reach. Drag and dock panes on iPad, or install JustTerminal as a PWA. Choose from nine themes and configure your keyboard shortcuts.
 
-**Use current pane** includes the current pane context when sending to JT or starting an agent. **Add selection** attaches highlighted terminal text. Shared images appear in chat with full-size previews, and local file links open in the workspace viewer.
+<p align="center">
+  <img src="web/site/assets/agent-mobile.png" width="260" alt="JustTerminal on a phone, showing agent chat, a shared image, workspace navigation, and extra keyboard keys">
+</p>
 
-Start a fresh JT conversation with **New chat** when it is idle; previous history stays saved. Closing an inactive agent or using **Clear inactive** closes its Codex terminal views and empty workspace without deleting saved history. Any shells or browser panes you added remain accessible as a normal workspace. **Stop** interrupts the selected agent's Codex turn; **Stop all** interrupts the other agents too. Normal Codex interrupt behavior applies to shell processes already started.
-
-Agents can use the [built-in MCP server](docs/running-just-terminal.md#agent-integration-with-mcp) to manage workspaces and Codex sessions, inspect terminals and files, manage S3 transfers, and expose local apps, too.
-
-## Choose the skills available to Codex
-
-Open **Skills** in the file sidebar to search the skills available to the selected terminal's project. Read a skill's instructions in a Markdown tab, enable or disable it, or toggle all skills at once. Settings are saved in Codex; restart existing Codex sessions to apply changes.
-
-**Use skill** adds its `$name` reference to the active Codex terminal prompt. Add your task and send it when you're ready.
-
-## Read the files beside the terminal
-
-The file sidebar follows your active terminal as you `cd` through a project, with Git change badges beside the files. Open a file from the tree or click a detected path in terminal output to read it in a tab.
-
-Source code gets syntax highlighting, Markdown is rendered, and images open as previews. HTML files have both preview and source views. The viewers are read-only: use them to check an agent's changes, read a plan, or inspect a log while keeping your editor in the terminal.
-
-Copy an image or screenshot and paste it into a terminal. JustTerminal saves it on the host and inserts its path for your CLI or agent to use.
-
-## Work with S3 alongside local files
-
-Switch the sidebar from **Local** to **S3** to browse buckets and folders. Save connections to AWS S3 or compatible services with custom endpoints; credentials stay on the JustTerminal host.
-
-- Upload from your computer and download to your browser.
-- Copy between the host and S3, or between buckets and connections.
-- Select several files or copy a whole folder at once.
-- Follow progress in **Transfers**, resolve overwrites, cancel jobs, or retry them.
-- Delete objects and folders with confirmation.
-
-Copies between the host and S3, or between S3 connections, run in the background on the server. They keep going when you close the tab. Job history survives a server restart, with interrupted jobs available to retry.
-
-Add a connection in **Settings → S3**. “Local” refers to the machine running JustTerminal; uploads and downloads reach the computer you're browsing from.
-
-## Open what you're building
-
-Start a web app in a terminal and add its port in **Settings → Local apps**. Open the resulting URL to try it out. Assets, redirects, cookies, and WebSockets work through the tunnel.
-
-Each app gets its own hostname, so a remote deployment doesn't need another published container port for every dev server. Set up wildcard DNS, TLS, and proxy routing once using the [local app guide](docs/local-app-tunnels.md).
-
-## Come back from another device
-
-Your terminal sessions live on the host. Close the browser or lose your connection, then reconnect to the current screen and scrollback. Sessions also survive a restart of the web server while the process that owns the shells keeps running.
-
-Use JustTerminal in a browser or install it as a PWA. On a phone, switch between **Chat**, **Files**, **Console**, and **Agents** from the workspace controls, with indicators for working agents and requests for attention. Extra keys are available for terminal input and agent chat, alongside touch controls and voice input where supported. On any screen, choose from nine themes and configure your keyboard shortcuts.
-
-A host reboot or container replacement still ends running shells. Persistent storage keeps your files, settings, workspace names, and resumable agent history. See [what survives a restart](docs/running-just-terminal.md#what-persistence-means).
+A **host reboot or container replacement ends running shells**. Persistent storage keeps files, settings, workspace names, and resumable agent history. S3 job history survives a server restart; interrupted transfers can be retried. See [what persistence means](docs/running-just-terminal.md#what-persistence-means).
 
 ## Try it
 
-JustTerminal is under active development. Download ready-to-run builds from [public GitHub Releases](https://github.com/maxbaines/just-terminal-docs/releases/latest); no access to the private source repository is needed.
+JustTerminal is under active development. [Public releases](https://github.com/maxbaines/just-terminal-docs/releases/latest) include the web UI; **no Go, Node.js, or private repository access is needed** to run a download.
 
 | Platform | Download |
 |---|---|
@@ -88,44 +50,21 @@ JustTerminal is under active development. Download ready-to-run builds from [pub
 | macOS | [Intel](https://github.com/maxbaines/just-terminal-docs/releases/latest/download/just-terminal_darwin_amd64.tar.gz) · [Apple silicon](https://github.com/maxbaines/just-terminal-docs/releases/latest/download/just-terminal_darwin_arm64.tar.gz) |
 | Windows (WSL2) | Use the Linux build inside WSL2; [setup instructions](docs/running-just-terminal.md#windows-wsl2) |
 
-See [download and installation instructions](docs/running-just-terminal.md#download-and-run) for checksum verification, the optional installer, and unsigned macOS build notes. Windows requires WSL2; there is no native Windows executable. The web UI is included, so Go and Node.js are not needed to run a downloaded build.
+[Verify and extract the archive](docs/running-just-terminal.md#download-and-run), run `./just-terminal`, and open **http://127.0.0.1:8311**. Local loopback access needs no account setup. Create a workspace for your project, or choose **JT** to give it a task once Codex is installed and signed in.
 
-The source repository is private; the build instructions below require collaborator access. Public documentation and issue reports live in [just-terminal-docs](https://github.com/maxbaines/just-terminal-docs).
+macOS builds are unsigned and not notarized; see the [macOS installation notes](docs/running-just-terminal.md#macos). Windows requires WSL2; there is no native Windows executable. The [installation guide](docs/running-just-terminal.md#download-and-run) also covers checksums and the optional installer.
 
-With source access, start with a local build on **macOS, Linux, or WSL2**, using **Go 1.24.4**, **Node.js 22**, npm, and make:
+## Run it on your own machine or server
 
-```bash
-git clone https://github.com/maxbaines/just-terminal.git
-cd just-terminal
-make build
-./bin/just-terminal
-```
+Keep it local, or self-host behind HTTPS for access from other devices. Remote authentication uses passkeys, TOTP, and recovery codes stored on your host, with no external identity service or database to set up.
 
-Your browser opens at **http://127.0.0.1:8311**. Local access needs no account setup. Agent CLIs are optional; install and sign in to the ones you want to use on the host.
-
-For a first look:
-
-1. Click **New workspace** and give your project a name.
-2. `cd` into your project and start your usual shell tools or coding agent.
-3. Add a terminal tab or split, then open the file sidebar to inspect your project alongside it.
-4. With Codex installed and signed in, choose **JT** or **New agent** to give it a task. Open its chat, inspect shared files, or add guidance while it works.
-5. Close the browser tab and reopen JustTerminal. Your session is still there.
-
-The public repository also includes a release-based Dockerfile with Codex CLI, Claude Code, Playwright with Chromium, and a shell toolbox; see [Docker and Coolify setup](docs/running-just-terminal.md#docker-and-coolify).
-
-## Run it on your own terms
-
-Keep it local, or put it behind HTTPS to reach it from other devices. Remote sign-in uses passkeys, TOTP, and recovery codes. Authentication lives on your host; there's no external identity service or database to set up.
-
-- [Remote access and deployment](docs/running-just-terminal.md#remote-access)
+- [Self-hosting and remote access](docs/running-just-terminal.md#remote-access)
+- [Docker and Coolify](docs/running-just-terminal.md#docker-and-coolify) — the public release-based Dockerfile includes Codex CLI, Claude Code, Playwright with Chromium, and a shell toolbox.
 - [Authentication and recovery](docs/authentication.md)
-- [CLI reference and agent integrations](docs/running-just-terminal.md#cli)
-- [Releases and updates](docs/running-just-terminal.md#releases-and-updates)
+- [CLI reference](docs/running-just-terminal.md#cli) · [Releases and updates](docs/running-just-terminal.md#releases-and-updates)
 
-## Help shape JustTerminal
+**The source repository is private.** Downloads, public Docker builds, documentation, and issue reports are available through [just-terminal-docs](https://github.com/maxbaines/just-terminal-docs). [Building from source](docs/running-just-terminal.md#build-and-run) requires collaborator access, macOS/Linux/WSL2, Go 1.24.4, Node.js 22, npm, and make.
 
-If something gets in your way, [open an issue](https://github.com/maxbaines/just-terminal-docs/issues) and tell us what you were trying to do. Read the [contribution guidelines](CONTRIBUTING.md) for useful bug reports, focused proposals, and PR expectations. Discuss substantial changes before implementing them. Source contributions require repository access and real browser verification; collaborators should also read [AGENTS.md](AGENTS.md).
+Found a rough edge? [Open an issue](https://github.com/maxbaines/just-terminal-docs/issues) or read the [contribution guidelines](CONTRIBUTING.md). Source collaborators should also read [AGENTS.md](AGENTS.md).
 
-JustTerminal builds on [muxterm](https://github.com/kenotron-ms/muxterm). See [fork provenance](docs/fork-provenance.md) for its origins and upstream policy.
-
-Licensed under [AGPL-3.0-or-later](LICENSE).
+Built on [muxterm](https://github.com/kenotron-ms/muxterm) · [Fork provenance](docs/fork-provenance.md) · [AGPL-3.0-or-later](LICENSE)
