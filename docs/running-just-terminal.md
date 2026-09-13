@@ -69,7 +69,7 @@ verification is separate from the native Linux and macOS release checks.
 
 ## Build and run
 
-The source repository is private. Building locally or deploying its Dockerfile requires collaborator access. The public documentation repository hosts release downloads but does not contain the application source.
+The source repository is private; compiling it requires collaborator access. Public users can run the release downloads above or build the [public Docker image](#docker-and-coolify) below without application source.
 
 ### Requirements
 
@@ -110,28 +110,170 @@ See [Authentication](authentication.md) for setup, recovery, storage, and reset 
 
 ## Docker and Coolify
 
-The repository Dockerfile builds JustTerminal on top of the Codex universal image and includes Codex CLI, Claude Code, Playwright CLI with Chromium, zsh, GitHub CLI, Starship, delta, lazygit, and yazi. These JustTerminal-managed additions are grouped and versioned near the top of the final Docker stage, and each version can be overridden with a Docker `--build-arg`. The image listens on container port `8311`.
-New terminal panes start in `/workspace` by default.
+The [public Dockerfile](../Dockerfile) downloads the embedded-UI binary from a
+versioned public release and verifies its SHA-256 checksum before installing it.
+No private repository, GitHub token, Go compiler, or application source is needed.
+Its runtime is shared with the private source build: the Codex Universal base,
+Codex CLI, Claude Code, Playwright CLI with Chromium, zsh, GitHub CLI, Starship,
+delta, lazygit, yazi, and shell plugins. New panes start in `/workspace`.
 
-For a Coolify deployment:
+### Build from the public repository
 
-1. Build from the repository `Dockerfile`.
-2. Expose port `8311` through an HTTPS domain.
-3. Set `JUST_TERMINAL_PUBLIC_ORIGIN` to that exact origin (for example,
-   `https://terminal.example.com`).
-4. To expose local apps, route a wildcard hostname to the same container and set
-   `JUST_TERMINAL_TUNNEL_ORIGIN` (for example,
-   `https://{id}.apps.example.com`). See [Local app tunnels](local-app-tunnels.md).
-5. Add persistent storage for the paths below.
+Install Docker Engine with BuildKit or Docker Desktop using Linux containers.
+The base image and release archives are available for `linux/amd64` and
+`linux/arm64`; Windows uses Docker Desktop's WSL2 backend. The image includes a
+large development toolbox and browser, so allow substantial disk space and time
+for the first build. Downloads require access to Docker Hub, GHCR, GitHub, npm,
+APT repositories, and the Playwright browser CDN.
+
+```bash
+git clone https://github.com/maxbaines/just-terminal-docs.git
+cd just-terminal-docs
+docker build --pull \
+  --build-arg JUST_TERMINAL_VERSION=v0.1.1 \
+  -t just-terminal:v0.1.1 .
+```
+
+Use the repository root as the build context, keeping `docker/`,
+`.playwright/cli.config.json`, and `.dockerignore`. Copying the Dockerfile alone
+is insufficient. `JUST_TERMINAL_VERSION` must be a published `vMAJOR.MINOR.PATCH`
+tag (an optional prerelease suffix is accepted); `latest` is intentionally not
+accepted. The default is `v0.1.1`. An unavailable release, unsupported architecture,
+or missing/mismatched checksum stops the build. The checksum comes from the same
+HTTPS release; it checks integrity, not a publisher signature.
+
+Docker selects the native architecture. To target a different one, use
+`docker buildx build --platform linux/arm64 --load -t just-terminal:v0.1.1 .`
+with a [suitable native or emulated builder](https://docs.docker.com/build/building/multi-platform/).
+The `CODEX_VERSION`, `CLAUDE_CODE_VERSION`, and `PLAYWRIGHT_CLI_VERSION` build
+arguments select CLI versions. Shell-tool versions are coupled to pinned hashes
+in `docker/install-shell-tools`; changing their version arguments also requires
+reviewing and updating both architecture checksums in that file.
+
+### Run locally and enroll the owner
+
+```bash
+docker run -d --name just-terminal --restart unless-stopped \
+  -p 127.0.0.1:8311:8311 \
+  -e JUST_TERMINAL_PUBLIC_ORIGIN=http://localhost:8311 \
+  -v jt-state:/var/lib/just-terminal \
+  -v jt-codex:/root/.codex \
+  -v jt-claude:/root/.claude \
+  -v jt-workspace:/workspace \
+  just-terminal:v0.1.1
+
+docker logs --tail 50 just-terminal
+docker inspect --format '{{.State.Health.Status}}' just-terminal
+docker exec just-terminal just-terminal auth init --origin http://localhost:8311
+```
+
+Open the printed enrollment URL using **localhost**, register a passkey, enroll
+TOTP, and save the recovery codes. Then open http://localhost:8311. The startup
+wrapper always enables reverse-proxy authentication, including for this local
+example; publishing a loopback port does not bypass enrollment. `localhost` is
+the browser's HTTP development exception for passkeys. For remote access, choose
+the final HTTPS hostname before enrollment; credentials are scoped to that host.
+The health check uses `/api/health` and can succeed before owner enrollment.
+
+The image runs shells and agents as root inside the container, with Codex's
+`danger-full-access` sandbox default. Give it only the volumes and project files
+that this owner should control. A host project can replace `jt-workspace` with
+`--mount type=bind,src=/absolute/path/to/projects,dst=/workspace`; files created
+there may be root-owned on Linux. No Docker socket or privileged mode is needed.
+
+### Remote access and Coolify
+
+For an HTTPS reverse proxy on the Docker host, use the run command above with
+`JUST_TERMINAL_PUBLIC_ORIGIN=https://terminal.example.com`, forward the domain to
+`127.0.0.1:8311`, and support WebSocket upgrades. If the proxy runs in a separate
+container, connect both containers to the same Docker network and route to
+`just-terminal:8311` instead of the proxy's own loopback address.
+
+For Coolify:
+
+1. Create a Dockerfile-based resource from the public repository above, using
+   `/Dockerfile` and the repository root build context.
+2. Set the `JUST_TERMINAL_VERSION` build argument to the desired published tag.
+3. Route an HTTPS domain to container port `8311` and set
+   `JUST_TERMINAL_PUBLIC_ORIGIN` to that exact origin.
+4. Add all four persistent mounts below before first deployment.
+5. Deploy, then run `just-terminal auth init --origin https://terminal.example.com`
+   in Coolify's container terminal and complete the printed enrollment URL.
+
+For local app tunnels, route a wildcard hostname to the same container and set
+`JUST_TERMINAL_TUNNEL_ORIGIN=https://{id}.apps.example.com`. See
+[Local app tunnels](local-app-tunnels.md) for DNS, TLS, and proxy configuration.
+No extra application ports need publishing.
+
+### Persistence and provider login
 
 | Destination | Contents |
 |---|---|
-| `/var/lib/just-terminal` | JustTerminal auth/config, shell history, Git/GitHub/npm settings, SSH/GnuPG state, and other XDG state |
+| `/var/lib/just-terminal` | JustTerminal owner auth/config, shell history, Git/GitHub/npm settings, SSH/GnuPG state, and other XDG state |
 | `/root/.codex` | Codex configuration, file-backed login, skills/plugins, and resumable sessions |
 | `/root/.claude` | Claude Code configuration, login, and sessions |
 | `/workspace` | Repositories and working files |
 
-Do not persist `/run/just-terminal`; it contains runtime-only sockets. Treat the persisted volumes as sensitive because they can contain access tokens, private keys, and shell history.
+The named volumes in the run example are created automatically and reused across
+container replacements. In Coolify, keep the same persistent volume assignments
+on redeploy. Do not mount all of `/root`: that hides the image's shell setup and
+development tools. Do not persist `/run/just-terminal`; it contains runtime-only
+sockets. Chromium is installed into `/var/cache/just-terminal/ms-playwright` in
+the image; an empty cache mount would hide it.
+
+Owner enrollment protects the JT web UI; provider and Git logins are separate.
+After enrollment, use a terminal pane or the container terminal:
+
+```bash
+docker exec -it just-terminal codex login --device-auth
+docker exec -it just-terminal claude auth login
+docker exec -it just-terminal gh auth login
+docker exec just-terminal just-terminal auth status
+```
+
+Follow each provider's printed login instructions. Accounts and subscriptions
+are not included in the image. The wrapper defaults Codex to file-backed
+credentials so its volume retains login. SSH and GnuPG home directories link
+into the state volume; Git, GitHub, and npm configuration also use that volume.
+Treat and back up all four volumes as sensitive; they may contain tokens, private
+keys, source code, and shell history. Never bake credentials into a Dockerfile or
+commit them into this public build context. See [Authentication](authentication.md)
+for owner recovery and host-local reset procedures.
+
+### Update and roll back
+
+Container updates replace the image; the About updater does not overwrite the
+container binary. Review the [release notes](https://github.com/maxbaines/just-terminal-docs/releases),
+back up the persistent volumes, and build the next release while the old
+container is still running:
+
+```bash
+git pull --ff-only
+# Replace vX.Y.Z with an existing release tag.
+docker build --pull --build-arg JUST_TERMINAL_VERSION=vX.Y.Z -t just-terminal:vX.Y.Z .
+docker stop just-terminal
+docker rm just-terminal
+# Repeat the run command with the same origin, ports, and four volume names,
+# changing only the image to just-terminal:vX.Y.Z.
+```
+
+In Coolify, change the version build argument and redeploy with the same mounts.
+After replacement, check container health, `docker exec just-terminal
+just-terminal version`, provider login, and your files. Keep the old image until
+the update is verified. To roll back, replace the container with the previous
+image and the same mounts; restore a pre-update volume backup if release notes
+warn that a data migration prevents an in-place downgrade. Removing a container
+without `-v` preserves the named volumes. Do not prune or delete those volumes.
+
+### Verification status
+
+The public Linux v0.1.1 archives and pinned Codex Universal platform manifests
+were fetched anonymously; the amd64 release was exercised with a real browser,
+Session Owner, shell, and reconnect replay. The published build context contains
+all runtime `COPY` inputs and retains executable script modes. A full Docker
+image build, container startup/replacement, provider login, and ARM64 runtime
+pass have **not** been verified in this publishing environment because no Docker
+engine/socket is available. These remain deployment verification steps.
 
 ### What persistence means
 

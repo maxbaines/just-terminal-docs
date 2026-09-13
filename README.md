@@ -111,7 +111,7 @@ For a first look:
 4. With Codex installed and signed in, choose **JT** or **New agent** to give it a task. Open its chat, inspect shared files, or add guidance while it works.
 5. Close the browser tab and reopen JustTerminal. Your session is still there.
 
-The repository also includes a Dockerfile with Codex CLI, Claude Code, Playwright with Chromium, and a shell toolbox; see [Docker and Coolify setup](docs/running-just-terminal.md#docker-and-coolify).
+The public repository also includes a release-based Dockerfile with Codex CLI, Claude Code, Playwright with Chromium, and a shell toolbox; see [Docker and Coolify setup](docs/running-just-terminal.md#docker-and-coolify).
 
 ## Run it on your own terms
 
