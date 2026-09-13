@@ -113,7 +113,7 @@ upgrades through `mod_proxy_http`; see the
 
 Route the exact UI hostname and the wildcard app hostname to the same service.
 Use `HostRegexp` for the generated app labels. The
-[Traefik router documentation](https://doc.traefik.io/traefik/routing/routers/#host-and-hostregexp)
+[Traefik router documentation](https://doc.traefik.io/traefik/reference/routing-configuration/http/routing/rules-and-priority/#host-and-hostregexp)
 describes the matcher.
 
 ```yaml
@@ -156,9 +156,9 @@ every tunnel hostname requires its multi-domain/SaaS routing mode:
 5. Set `JUST_TERMINAL_TUNNEL_ORIGIN=https://{id}.apps.example.com` and redeploy.
 
 Coolify documents the required catch-all labels under
-[Wildcard SSL Certificates → SaaS](https://coolify.io/docs/knowledge-base/proxy/traefik/wildcard-certs)
+[Wildcard certificates → Traefik wildcard routing](https://coolify.io/docs/core/networking/proxy/traefik/wildcard-certs#traefik-wildcard-routing)
 and the DNS record under
-[Wildcard Domains](https://coolify.io/docs/knowledge-base/dns-configuration#wildcard-domains).
+[Configure wildcard DNS](https://coolify.io/docs/core/networking/dns#configure-wildcard-dns).
 
 If Coolify is using Caddy rather than Traefik, add the equivalent wildcard site
 to the Coolify Caddy configuration using the Caddy recipe above.
