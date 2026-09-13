@@ -80,7 +80,17 @@ A host reboot or container replacement still ends running shells. Persistent sto
 
 ## Try it
 
-JustTerminal is under active development. The source repository is private; the build instructions below require collaborator access. Public documentation and issue reports live in [just-terminal-docs](https://github.com/maxbaines/just-terminal-docs).
+JustTerminal is under active development. Download ready-to-run builds from [public GitHub Releases](https://github.com/maxbaines/just-terminal-docs/releases/latest); no access to the private source repository is needed.
+
+| Platform | Download |
+|---|---|
+| Linux | [x64](https://github.com/maxbaines/just-terminal-docs/releases/latest/download/just-terminal_linux_amd64.tar.gz) · [ARM64](https://github.com/maxbaines/just-terminal-docs/releases/latest/download/just-terminal_linux_arm64.tar.gz) |
+| macOS | [Intel](https://github.com/maxbaines/just-terminal-docs/releases/latest/download/just-terminal_darwin_amd64.tar.gz) · [Apple silicon](https://github.com/maxbaines/just-terminal-docs/releases/latest/download/just-terminal_darwin_arm64.tar.gz) |
+| Windows (WSL2) | Use the Linux build inside WSL2; [setup instructions](docs/running-just-terminal.md#windows-wsl2) |
+
+See [download and installation instructions](docs/running-just-terminal.md#download-and-run) for checksum verification, the optional installer, and unsigned macOS build notes. Windows requires WSL2; there is no native Windows executable. The web UI is included, so Go and Node.js are not needed to run a downloaded build.
+
+The source repository is private; the build instructions below require collaborator access. Public documentation and issue reports live in [just-terminal-docs](https://github.com/maxbaines/just-terminal-docs).
 
 With source access, start with a local build on **macOS, Linux, or WSL2**, using **Go 1.24.4**, **Node.js 22**, npm, and make:
 
@@ -101,7 +111,7 @@ For a first look:
 4. With Codex installed and signed in, choose **JT** or **New agent** to give it a task. Open its chat, inspect shared files, or add guidance while it works.
 5. Close the browser tab and reopen JustTerminal. Your session is still there.
 
-Download checksummed Linux and macOS builds for x64 or ARM64 from [public GitHub Releases](https://github.com/maxbaines/just-terminal-docs/releases/latest). Windows uses the Linux builds through WSL2; there is no native Windows executable. See [download and installation instructions](docs/running-just-terminal.md#download-and-run), including the unsigned macOS build notes. The repository also includes a Dockerfile with Codex CLI, Claude Code, Playwright with Chromium, and a shell toolbox; see [Docker and Coolify setup](docs/running-just-terminal.md#docker-and-coolify).
+The repository also includes a Dockerfile with Codex CLI, Claude Code, Playwright with Chromium, and a shell toolbox; see [Docker and Coolify setup](docs/running-just-terminal.md#docker-and-coolify).
 
 ## Run it on your own terms
 
