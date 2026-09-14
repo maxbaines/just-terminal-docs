@@ -52,6 +52,12 @@ JustTerminal is under active development. [Public releases](https://github.com/m
 
 [Verify and extract the archive](docs/running-just-terminal.md#download-and-run), run `./just-terminal`, and open **http://127.0.0.1:8311**. Local loopback access needs no account setup. Create a workspace for your project, or choose **JT** to give it a task once Codex is installed and signed in.
 
+**Recommended for a VPS:** SSH into an Ubuntu/Debian server, install the native
+release, and use [Caddy for public HTTPS](docs/running-just-terminal.md#caddy-public-https)
+or [Tailscale Serve for private HTTPS](docs/running-just-terminal.md#tailscale-private-https).
+The [remote setup guide](docs/running-just-terminal.md#remote-access) covers
+installation, startup after reboot, and owner enrollment. No Docker required.
+
 macOS builds are unsigned and not notarized; see the [macOS installation notes](docs/running-just-terminal.md#macos). Windows requires WSL2; there is no native Windows executable. The [installation guide](docs/running-just-terminal.md#download-and-run) also covers checksums and the optional installer.
 
 ## Run it on your own machine or server

@@ -90,6 +90,201 @@ Running `just-terminal` without a subcommand starts the local Gateway at `http:/
 
 ## Remote access
 
+**Our recommended VPS setup is the native Linux download with Caddy or
+Tailscale Serve.** Start with a fresh Ubuntu/Debian server (for example, a
+Hetzner VPS), SSH in, install JustTerminal, and choose how to reach it over
+HTTPS. Docker, Go, and Node.js are not required for JustTerminal itself.
+
+- [Caddy: public HTTPS](#caddy-public-https) on a domain you control, accessible
+  from any browser after owner sign-in.
+- [Tailscale: private HTTPS](#tailscale-private-https) on a Tailscale hostname,
+  accessible from devices connected to your Tailscale network.
+
+Choose one route, then complete [Start and enroll](#start-and-enroll). These
+instructions set up the terminal interface; [local app previews](#app-preview-urls)
+need additional hostname configuration.
+
+### Install on the VPS
+
+Use a normal Linux account with `sudo` access and SSH directly into that account.
+Run the JustTerminal installer, service commands, and owner enrollment as the
+same user, without `sudo`. Shells and agents run with that user's permissions.
+If the VPS initially gives you only root access, create a normal sudo-capable
+account and configure its SSH access first.
+
+```bash
+sudo apt update
+sudo apt install -y curl ca-certificates
+
+curl -fsSL https://github.com/maxbaines/just-terminal-docs/releases/latest/download/install.sh | bash
+export PATH="$HOME/.local/bin:$PATH"
+mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/just-terminal"
+```
+
+The installer verifies the release archive checksum and installs to
+`~/.local/bin`. To inspect the script before running it, use the
+[download-and-review alternative](#download-and-run).
+
+### Caddy: public HTTPS
+
+First complete [Install on the VPS](#install-on-the-vps).
+
+1. Create a DNS `A` record for your chosen hostname, such as
+   `terminal.example.com`, pointing to the VPS's public IPv4 address. Only add
+   an `AAAA` record if IPv6 also reaches this server.
+2. Allow inbound TCP **80 and 443** in both the provider firewall and any host
+   firewall. Keep your SSH port allowed. Leave **8311** private. Ports 80/443
+   must be available for Caddy; if another proxy already uses them, configure
+   that proxy instead.
+3. Install Caddy from its
+   [official Ubuntu/Debian repository](https://caddyserver.com/docs/install#debian-ubuntu-raspbian):
+
+```bash
+sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https gnupg
+curl -1sLf https://dl.cloudsmith.io/public/caddy/stable/gpg.key |
+  sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt |
+  sudo tee /etc/apt/sources.list.d/caddy-stable.list
+sudo chmod o+r /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+sudo chmod o+r /etc/apt/sources.list.d/caddy-stable.list
+sudo apt update
+sudo apt install -y caddy
+```
+
+Edit `/etc/caddy/Caddyfile` with `sudoedit /etc/caddy/Caddyfile`. On a fresh
+installation, replace the example site with the following, substituting your
+actual hostname. Preserve other sites if Caddy is already configured.
+
+```caddyfile
+terminal.example.com {
+    reverse_proxy 127.0.0.1:8311
+}
+```
+
+Validate and apply:
+
+```bash
+sudo caddy validate --config /etc/caddy/Caddyfile
+sudo systemctl enable --now caddy
+sudo systemctl reload caddy
+```
+
+Caddy handles WebSocket upgrades and
+[obtains and renews HTTPS certificates](https://caddyserver.com/docs/automatic-https).
+Use `https://terminal.example.com` as your origin in
+[Start and enroll](#start-and-enroll). Until JustTerminal starts, the proxy may
+return a 502 response.
+
+### Tailscale: private HTTPS
+
+First complete [Install on the VPS](#install-on-the-vps).
+
+Install Tailscale on the VPS and sign in using the printed login link:
+
+```bash
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up
+```
+
+Install [Tailscale](https://tailscale.com/download) on your laptop, phone, or
+tablet too, and connect it to the same Tailscale network. Its access rules must
+allow your device to reach the server on port 443.
+
+Configure Serve to forward HTTPS to JustTerminal:
+
+```bash
+sudo tailscale serve --bg http://127.0.0.1:8311
+tailscale serve status
+```
+
+Follow any printed consent link to enable HTTPS and rerun the Serve command if
+prompted. Copy its exact HTTPS URL, for example
+`https://my-server.example-tailnet.ts.net`, for [Start and enroll](#start-and-enroll).
+The proxy may return a 502 response until JustTerminal starts.
+
+[Serve](https://tailscale.com/docs/features/tailscale-serve) provides a private
+HTTPS address; no purchased domain or public inbound ports 80/443 are required
+for this route. Use Serve, not Funnel, which publishes the service to the
+internet. The [`--bg` setting](https://tailscale.com/docs/reference/tailscale-cli/serve)
+persists across server reboots. You do not need Caddy for this option.
+
+### Start and enroll
+
+For either route, edit the JustTerminal config:
+
+```bash
+nano "${XDG_CONFIG_HOME:-$HOME/.config}/just-terminal/config.toml"
+```
+
+Add this section, replacing the example origin with your **actual Caddy domain
+or Tailscale URL**, without a path. If `[server]` already exists, edit its values
+instead of adding a second section.
+
+```toml
+[server]
+behind_reverse_proxy = true
+public_origin = "https://terminal.example.com"
+```
+
+Keep `behind_reverse_proxy = true` for **both** Caddy and Tailscale Serve. It
+disables the localhost authentication bypass for traffic forwarded by the proxy.
+Choose your final hostname before enrolling: passkeys are scoped to that host.
+
+Install and start the services, enable startup without an active SSH login, and
+generate an owner setup code:
+
+```bash
+just-terminal install --addr 127.0.0.1:8311
+sudo loginctl enable-linger "$(id -un)"
+just-terminal auth init
+```
+
+Open the printed HTTPS setup URL on your own device (connected to Tailscale if
+using Serve). Enter the single-use bootstrap code within ten minutes, register
+a passkey, enroll TOTP, and save the recovery codes. Then create a workspace
+and open a terminal. See [Authentication](authentication.md) for recovery.
+
+On an existing installation, after editing the config use
+`systemctl --user restart just-terminal.service` to apply it. Do not reset
+active owner credentials to repeat setup. Changing an enrolled hostname needs
+the recovery/re-enrollment procedure in the authentication guide.
+
+The download includes the web UI, but development tools and agent providers are
+separate. Install Codex and sign in on the host as this same Linux user to enable
+agent chats. The [Docker option](#docker-and-coolify) includes a development
+toolbox if you prefer a preconfigured environment.
+
+### Check the setup
+
+```bash
+just-terminal doctor
+just-terminal auth status
+systemctl --user status just-terminal.service just-terminal-sessiond.service
+journalctl --user -u just-terminal.service -n 50 --no-pager
+```
+
+For Caddy, inspect `sudo journalctl -u caddy -n 50 --no-pager`; certificate
+failures usually need a DNS or port-reachability correction. For Tailscale,
+check `tailscale status` and `tailscale serve status`, and confirm your browser's
+device is connected. A 502 response means the proxy cannot reach the JT service.
+If `systemctl --user` cannot connect to the user bus, SSH directly into the
+normal user account instead of entering it through `su`.
+
+Open the final URL, complete sign-in, and run a command in a fresh terminal.
+Disconnect and reconnect your browser to verify the shell remains available.
+Services start again after a host reboot, but a reboot terminates live shells.
+
+### App-preview URLs
+
+The two basic recipes above do not enable local app tunnels. Each app needs its
+own hostname, separate from the JT interface. Follow
+[Local app tunnels](local-app-tunnels.md) for wildcard DNS, TLS, and proxy routing.
+Caddy wildcard certificates need a DNS challenge and typically a DNS-provider
+module and credentials. Tailscale Serve's standard device hostname does not
+provide the wildcard configuration required by JT's app tunnels.
+
+### Existing reverse proxy
+
 Put JustTerminal behind an HTTPS reverse proxy and give it the final public origin:
 
 ```bash
